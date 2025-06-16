@@ -58,7 +58,7 @@ jobs:
           GOOGLE_CLOUD_PROJECT: grant-matching-agent
           GCLOUD_PROJECT: grant-matching-agent
         run: |
-          firebase deploy --only functions --project "grant-matching-agent"
+          firebase deploy --only functions --project grant-matching-agent
 
       - name: Clean up config file
         if: always()
