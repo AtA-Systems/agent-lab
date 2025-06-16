@@ -40,8 +40,7 @@ jobs:
       # Optional: Create Firebase Config JSON file if your functions need it at deploy/build time  
       # This is less common for pure function deployment.  
       # If your functions need this at runtime, they should typically fetch it or have it configured differently.  
-      - name: Create Firebase Config JSON (if needed by functions at build/deploy)  
-        if: secrets.FIREBASE_CONFIG_JSON != ''  
+      - name: Create Firebase Config JSON (if needed by functions at build/deploy)   
         run: echo '${{ secrets.FIREBASE_CONFIG_JSON }}' > ./${{ env.FUNCTIONS_DIR }}/firebase_config.json  
         # You might need to adjust the path above (e.g., ./firebase_config.json)  
         # depending on where your Python code expects to find it.  
