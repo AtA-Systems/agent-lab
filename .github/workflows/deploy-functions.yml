@@ -50,7 +50,7 @@ jobs:
           cp "${{ steps.auth.outputs.credentials_file_path }}" ~/.config/gcloud/application_default_credentials.json  
     
       - name: Prepare Python Env
-        
+        working-directory: ./functions
         run: |
           python3.11 -m venv venv
           source venv/bin/activate
@@ -73,6 +73,7 @@ jobs:
             fi  
             # Append the secret to the .env file  
             echo "${OUTPUT_SECRET_NAME}=${!SECRET}" >> .env
+          done
           
       - name: Deploy Firebase Functions  
         env:  
