@@ -56,8 +56,9 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
           GOOGLE_CLOUD_PROJECT: grant-matching-agent
+          GCLOUD_PROJECT: grant-matching-agent
         run: |
-          firebase deploy --only functions 
+          firebase deploy --only functions --project "grant-matching-agent"
 
       - name: Clean up config file
         if: always()
