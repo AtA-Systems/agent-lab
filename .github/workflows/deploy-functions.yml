@@ -52,6 +52,44 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Test Python Authentication Directly  
+        env:  
+          # Use the project ID from GITHUB_ENV or hardcode if you prefer  
+          PROJECT_ID_FOR_TEST: grant-matching-agent # Or ${{ env.PROJECT_ID }}  
+          # This comes from the google-github-actions/auth step  
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}  
+        working-directory: ./functions # So it can find the venv  
+        run: |  
+          echo "Attempting Python authentication test..."  
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"  
+          echo "PROJECT_ID_FOR_TEST is set to: $PROJECT_ID_FOR_TEST"  
+          source venv/bin/activate  
+          python -c "  
+import os  
+import firebase_admin  
+from firebase_admin import credentials, firestore  
+  
+print(f'GAC env var: {os.environ.get(\"GOOGLE_APPLICATION_CREDENTIALS\")}')  
+print(f'GCP env var: {os.environ.get(\"GOOGLE_CLOUD_PROJECT\")}') # Check if this is needed/set  
+  
+try:  
+    # Explicitly initialize with project ID if relying on ADC  
+    # For service accounts, GOOGLE_APPLICATION_CREDENTIALS should be enough for google.auth.default()  
+    # If GOOGLE_CLOUD_PROJECT is also set in env, firebase_admin.initialize_app() should pick it up.  
+    if not firebase_admin._apps:  
+        # Initialize with the project ID to be certain,  
+        # it will use GOOGLE_APPLICATION_CREDENTIALS for auth.  
+        firebase_admin.initialize_app(options={  
+            'projectId': os.environ.get('PROJECT_ID_FOR_TEST')  
+        })  
+      
+    db = firestore.client()  
+    print(f'Successfully initialized Firestore client for project: {db.project}')  
+    print('Python authentication test PASSED.')  
+except Exception as e:  
+    print(f'Python authentication test FAILED: {e}')  
+    exit(1)  
+"  
       - name: Deploy Firebase Functions  
         env:  
           # This is the crucial one for google.auth.default()  
