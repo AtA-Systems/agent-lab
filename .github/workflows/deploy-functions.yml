@@ -52,7 +52,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-            - name: Deploy Firebase Functions  
+      - name: Deploy Firebase Functions  
         env:  
           # This is the crucial one for google.auth.default()  
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}  
