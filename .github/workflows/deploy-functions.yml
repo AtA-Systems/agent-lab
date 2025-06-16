@@ -55,8 +55,8 @@ jobs:
       - name: Deploy Firebase Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+          GOOGLE_CLOUD_PROJECT: grant-matching-agent
         run: |
-          echo "Deploying Functions to project: ${{ env.PROJECT_ID }}"
           firebase deploy --only functions 
 
       - name: Clean up config file
