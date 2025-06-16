@@ -50,13 +50,24 @@ jobs:
           cp "${{ steps.auth.outputs.credentials_file_path }}" ~/.config/gcloud/application_default_credentials.json  
     
       - name: Prepare Python Env
-        working-directory: ./functions
+        
         run: |
           python3.11 -m venv venv
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Add environment secrets to .env  
+        env:  
+          SECRETS: "OPENAI_API_KEY,DEEPINFRA_API_KEY,GITHUB_TOKEN" # Comma separated list of your secrets  
+        working-directory: ./functions
+        run: |  
+          touch .env
+          for SECRET in $(echo $SECRETS | sed "s/,/ /g")  
+          do  
+            echo "${SECRET}=${!SECRET}" >> .env  
+          done  
+          
       - name: Deploy Firebase Functions  
         env:  
           # This is the crucial one for google.auth.default()  
