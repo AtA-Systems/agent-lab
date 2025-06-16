@@ -52,13 +52,26 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Deploy Firebase Functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-          GOOGLE_CLOUD_PROJECT: grant-matching-agent
-          GCLOUD_PROJECT: grant-matching-agent
-        run: |
-          firebase deploy --only functions --project grant-matching-agent
+            - name: Deploy Firebase Functions  
+        env:  
+          # This is the crucial one for google.auth.default()  
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}  
+          # Set GOOGLE_CLOUD_PROJECT, which firebase-admin SDK prefers  
+          GOOGLE_CLOUD_PROJECT: grant-matching-agent # Or ${{ env.PROJECT_ID }}  
+          # GCLOUD_PROJECT is an older alias, sometimes still checked.  
+          GCLOUD_PROJECT: grant-matching-agent       # Or ${{ env.PROJECT_ID }}  
+          working-directory: ./ # Assuming firebase.json is at the root  
+          run: |  
+            echo "--- Environment for Firebase Deploy ---"  
+            echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"  
+            echo "GOOGLE_CLOUD_PROJECT: $GOOGLE_CLOUD_PROJECT"  
+            echo "GCLOUD_PROJECT: $GCLOUD_PROJECT"  
+            echo "Current directory: $(pwd)"  
+            ls -la # Show files in current directory, check for firebase.json  
+            echo "---------------------------------------"  
+              
+            echo "Deploying Functions to project: $GOOGLE_CLOUD_PROJECT"  
+            firebase deploy --only functions --project "$GOOGLE_CLOUD_PROJECT" --debug  
 
       - name: Clean up config file
         if: always()
