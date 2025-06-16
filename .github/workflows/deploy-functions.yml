@@ -47,7 +47,7 @@ jobs:
   
       - name: Deploy to Firebase Functions  
         run: |  
-          firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }} --force  
+          firebase deploy --only functions 
         env:  
           # Use the service account for authentication with Firebase CLI  
           # GOOGLE_APPLICATION_CREDENTIALS is the standard env var for Google Cloud service accounts  
