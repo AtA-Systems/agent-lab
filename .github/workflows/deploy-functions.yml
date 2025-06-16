@@ -59,7 +59,8 @@ jobs:
           # Set GOOGLE_CLOUD_PROJECT, which firebase-admin SDK prefers  
           GOOGLE_CLOUD_PROJECT: grant-matching-agent # Or ${{ env.PROJECT_ID }}  
           # GCLOUD_PROJECT is an older alias, sometimes still checked.  
-          GCLOUD_PROJECT: grant-matching-agent       # Or ${{ env.PROJECT_ID }}  
+          GCLOUD_PROJECT: grant-matching-agent       # Or ${{ env.PROJECT_ID }} 
+          PROJECT_ID: grant-matching-agent
         working-directory: ./ # Assuming firebase.json is at the root  
         run: |  
             echo "--- Environment for Firebase Deploy ---"  
