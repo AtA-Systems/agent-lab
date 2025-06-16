@@ -19,11 +19,16 @@ jobs:
         with:  
           python-version: '3.11' # Specify your Python version used by Firebase Functions  
   
-      - name: Install Python Dependencies  
+      - name: Create venv and Install Dependencies  
         working-directory: ./${{ env.FUNCTIONS_DIR }}  
         run: |  
+          python -m venv venv  
+          source venv/bin/activate  # Or use `.\venv\Scripts\activate` on Windows runners, but ubuntu-latest is Linux  
           pip install --upgrade pip  
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi  
+          # Deactivation is not strictly necessary here as the shell scope ends with the `run` step,  
+          # but can be added for completeness if desired:  
+          # deactivate 
   
       - name: Set up Node.js (for Firebase CLI)  
         uses: actions/setup-node@v4  
