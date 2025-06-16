@@ -2,65 +2,63 @@ name: Deploy Firebase Functions Manually
 
 on:
   workflow_dispatch:
-  
-jobs:  
-  deploy:  
-    runs-on: ubuntu-latest  
-    env:  
-      # Path to your functions directory relative to the repository root  
-      FUNCTIONS_DIR: functions  
-  
-    steps:  
-      - name: Checkout Repository  
-        uses: actions/checkout@v4  
-  
-      - name: Set up Python  
-        uses: actions/setup-python@v5  
-        with:  
-          python-version: '3.11' # Specify your Python version used by Firebase Functions  
-  
-      - name: Create venv and Install Dependencies  
-        working-directory: ./${{ env.FUNCTIONS_DIR }}  
-        run: |  
-          python -m venv venv  
-          source venv/bin/activate  # Or use `.\venv\Scripts\activate` on Windows runners, but ubuntu-latest is Linux  
-          pip install --upgrade pip  
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi  
-          # Deactivation is not strictly necessary here as the shell scope ends with the `run` step,  
-          # but can be added for completeness if desired:  
-          # deactivate 
-  
-      - name: Set up Node.js (for Firebase CLI)  
-        uses: actions/setup-node@v4  
-        with:  
-          node-version: '18' # Or a newer LTS version  
-  
-      - name: Install Firebase CLI  
-        run: npm install -g firebase-tools  
-  
-      - name: Create Firebase Service Account File  
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AGENT_WEB_UI }}' > ./firebase-service-account.json  
-        # This service account will be used by firebase-tools for authentication  
-  
-      # Optional: Create Firebase Config JSON file if your functions need it at deploy/build time  
-      # This is less common for pure function deployment.  
-      # If your functions need this at runtime, they should typically fetch it or have it configured differently.  
-      - name: Create Firebase Config JSON (if needed by functions at build/deploy)   
-        run: echo '${{ secrets.FIREBASE_CONFIG_JSON }}' > ./${{ env.FUNCTIONS_DIR }}/firebase_config.json  
-        # You might need to adjust the path above (e.g., ./firebase_config.json)  
-        # depending on where your Python code expects to find it.  
-  
-      - name: Deploy to Firebase Functions  
-        run: |  
-          firebase deploy --only functions 
-        env:  
-          # Use the service account for authentication with Firebase CLI  
-          # GOOGLE_APPLICATION_CREDENTIALS is the standard env var for Google Cloud service accounts  
-          GOOGLE_APPLICATION_CREDENTIALS: ./firebase-service-account.json  
-          # Alternatively, for some firebase-tools versions, you might use FIREBASE_TOKEN  
-          # but service account is generally preferred for CI/CD.  
-          # FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }} # This would be a CI token generated via `firebase login:ci`  
-  
-      - name: Clean up Service Account File  
-        if: always() # Always run this step to ensure cleanup  
-        run: rm -f ./firebase-service-account.json  
+
+jobs:
+  deploy_functions:
+    name: Deploy Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Create firebaseConfig.json for Project ID extraction
+        run: echo '${{ secrets.FIREBASE_CONFIG_JSON }}' > src/firebaseConfig.json
+
+      - name: Install jq and Extract Project ID
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          PROJECT_ID=$(jq -r '.projectId' src/firebaseConfig.json)
+          if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" == "null" ]; then
+            echo "Error: projectId could not be extracted from FIREBASE_CONFIG_JSON."
+            exit 1
+          fi
+          echo "PROJECT_ID=$PROJECT_ID" >> $GITHUB_ENV
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AGENT_WEB_UI }}
+
+      - name: Prepare Python Env
+        working-directory: ./functions
+        run: |
+          python3.11 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Deploy Firebase Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: |
+          echo "Deploying Functions to project: ${{ env.PROJECT_ID }}"
+          firebase deploy --only functions --project ${{ env.PROJECT_ID }} --force --source ./functions
+
+      - name: Clean up config file
+        if: always()
+        run: rm -f src/firebaseConfig.json
