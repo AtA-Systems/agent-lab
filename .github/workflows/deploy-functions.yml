@@ -59,8 +59,8 @@ jobs:
 
       - name: Add environment secrets to .env  
         env:  
-          OPENAI_API_KEY: ${{ secrets.API_KEY_FOO }}  
-          DEEPINFRA_API_KEY: ${{ secrets.ANOTHER_SECRET }}  
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}  
           GITH_TOKEN: ${{ secrets.GITH_TOKEN }}
           SECRETS: "OPENAI_API_KEY,DEEPINFRA_API_KEY,GITH_TOKEN" # Comma separated list of your secrets  
         working-directory: ./functions
