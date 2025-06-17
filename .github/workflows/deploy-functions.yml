@@ -77,7 +77,7 @@ jobs:
             # Append the secret to the .env file  
             echo "${OUTPUT_SECRET_NAME}=${!SECRET}" >> .env
           done
-          cat .env
+          
           
       - name: Deploy Firebase Functions  
         env:  
