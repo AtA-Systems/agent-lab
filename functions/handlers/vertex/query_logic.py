@@ -132,28 +132,25 @@ async def _query_async_logic_internal(resource_name, message_text, adk_user_id, 
 
     logger.info(f"Query Prep: Retrieved remote app: {remote_app.name}")
     logger.info(f"DEBUG: session_id_from_client: {session_id_from_client}")
-    if session_id_from_client:
-        try:
-            logger.info(f"DEBUG: session_service: {session_service}")
-            retrieved_session = await session_service.get_session(app_name=resource_name, user_id=adk_user_id, session_id=session_id_from_client)
-            logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
-            if retrieved_session: current_adk_session_id = retrieved_session.id
-            else: logger.warn(f"Query Prep: get_session for '{session_id_from_client}' returned None.")
-        except Exception as e:
-            logger.warn(f"Query Prep: Failed to retrieve session '{session_id_from_client}'. Error: {e}. Will create new.")
-    if not current_adk_session_id:
-        try:
-            logger.info(f"DEBUG: session_service: {session_service}")
-            new_session = await session_service.create_session(app_name=resource_name, user_id=adk_user_id)
-            logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
-            current_adk_session_id = new_session.id
-            logger.info(f"Query Prep: Created new ADK session: {current_adk_session_id}")
-        except Exception as e_create_sess:
-            logger.error(f"Query Prep: Failed to create new ADK session. Error: {e_create_sess}")
-            return {"events": [], "responseText": "", "adkSessionId": None, "queryErrorDetails": [f"Session creation failed: {str(e_create_sess)}"]}
-    if not current_adk_session_id:
-        return {"events": [], "responseText": "", "adkSessionId": None, "queryErrorDetails": ["Critical: No ADK session."]}
-
+    if not current_adk_session_id:  
+        try:  
+            logger.info(f"DEBUG: session_service: {session_service}") # Already there  
+            # Add logging for parameters right before the call  
+            logger.info(f"DEBUG: Attempting to call create_session with app_name='{resource_name}', user_id='{adk_user_id}', project_id='{project_id}', location='{location}'")  
+  
+            new_session = await session_service.create_session(app_name=resource_name, user_id=adk_user_id)  
+            # Corrected log variable name here  
+            logger.info(f"DEBUG: new_session (after create_session call): {new_session}")  
+            current_adk_session_id = new_session.id  
+            logger.info(f"Query Prep: Created new ADK session: {current_adk_session_id}")  
+        except Exception as e_create_sess:  
+            # **** THIS IS THE IMPORTANT CHANGE ****  
+            logger.error(f"Query Prep: Failed to create new ADK session. Error: {e_create_sess}", exc_info=True)  
+            return {"events": [], "responseText": "", "adkSessionId": None, "queryErrorDetails": [f"Session creation failed: {str(e_create_sess)}"]}  
+    if not current_adk_session_id: # This check is after the try/except  
+        logger.error("Query Prep: Critical - current_adk_session_id is still None after attempting creation.") # Added log  
+        return {"events": [], "responseText": "", "adkSessionId": None, "queryErrorDetails": ["Critical: No ADK session."]}  
+  
     logger.info(f"Query Iteration: Dispatching stream_query to thread for ADK session '{current_adk_session_id}', user '{adk_user_id}', msg: '{message_text[:50]}...'")
 
     try:
