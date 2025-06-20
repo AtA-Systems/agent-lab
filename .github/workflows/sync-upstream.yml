@@ -11,9 +11,9 @@ on:
         description: 'New branch name for the update'  
         required: true  
         type: string  
-
+  
 permissions:  
-  contents: write 
+  contents: write  
   
 jobs:  
   sync-upstream:  
@@ -22,38 +22,47 @@ jobs:
       - name: Checkout repository  
         uses: actions/checkout@v4  
         with:  
-          fetch-depth: 0  # Fetch all history for merging  
+          fetch-depth: 0  # Full history required for proper merging  
   
       - name: Configure git  
         run: |  
           git config user.name "GitHub Actions"  
           git config user.email "actions@github.com"  
-          git config merge.ours.driver true  # Configure merge driver for "keep ours"  
+          git config merge.ours.driver true  # Always keep local changes during conflicts  
   
       - name: Add upstream remote  
         run: |  
-          git remote add upstream https://github.com/The-AI-Alliance/agent-lab-ui.git || true  
-          git fetch upstream --tags  
+          git remote add upstream https://github.com/The-AI-Alliance/agent-lab-ui.git  
+          git fetch upstream --tags --force  # Force fetch to ensure tags are updated  
   
-      - name: Create new branch  
+      - name: Verify tag exists  
+        run: |  
+          git ls-remote --tags upstream | grep -q "refs/tags/${{ github.event.inputs.upstream_tag }}$" || \  
+          { echo "Tag ${{ github.event.inputs.upstream_tag }} not found in upstream"; exit 1; }  
+  
+      - name: Create and switch to new branch  
         run: git checkout -b ${{ github.event.inputs.new_branch }}  
   
-      - name: Attempt automatic merge  
+      - name: Merge upstream changes  
         run: |  
-          git merge --no-commit --no-ff upstream/tags/${{ github.event.inputs.upstream_tag }} || true  
+          git merge --no-commit --no-ff upstream/${{ github.event.inputs.upstream_tag }} || true  
   
-      - name: Resolve conflicts (keep ours)  
+      - name: Resolve conflicts (keep local version)  
         run: |  
-          # List unmerged files and accept local version  
-          git diff --name-only --diff-filter=U | xargs -I {} git checkout --ours {}  
-          git add -A  
+          # Check for unmerged files  
+          conflicted_files=$(git diff --name-only --diff-filter=U)  
+          if [ -n "$conflicted_files" ]; then  
+            echo "Resolving conflicts in favor of local changes"  
+            git checkout --ours -- $conflicted_files  
+            git add $conflicted_files  
+          fi  
   
       - name: Commit merge result  
         run: |  
-          git commit -m "Merge upstream/${{ github.event.inputs.upstream_tag }} with local changes preserved" || echo "No commit needed (possibly clean merge)"  
-          # Handle case where merge was clean and commit already made  
-          if [ -z "$(git status --porcelain)" ]; then  
-            echo "Merge completed without conflicts"  
+          if ! git diff-index --quiet HEAD --; then  
+            git commit -m "Merge upstream ${{ github.event.inputs.upstream_tag }} (local changes preserved)"  
+          else  
+            echo "No merge commit needed"  
           fi  
   
       - name: Push to new branch  
