@@ -1,0 +1,57 @@
+name: Sync Upstream with Conflict Resolution  
+  
+on:  
+  workflow_dispatch:  
+    inputs:  
+      upstream_tag:  
+        description: 'Upstream tag to sync with'  
+        required: true  
+        type: string  
+      new_branch:  
+        description: 'New branch name for the update'  
+        required: true  
+        type: string  
+  
+jobs:  
+  sync-upstream:  
+    runs-on: ubuntu-latest  
+    steps:  
+      - name: Checkout repository  
+        uses: actions/checkout@v4  
+        with:  
+          fetch-depth: 0  # Fetch all history for merging  
+  
+      - name: Configure git  
+        run: |  
+          git config user.name "GitHub Actions"  
+          git config user.email "actions@github.com"  
+          git config merge.ours.driver true  # Configure merge driver for "keep ours"  
+  
+      - name: Add upstream remote  
+        run: |  
+          git remote add upstream https://github.com/The-AI-Alliance/agent-lab-ui.git || true  
+          git fetch upstream --tags  
+  
+      - name: Create new branch  
+        run: git checkout -b ${{ github.event.inputs.new_branch }}  
+  
+      - name: Attempt automatic merge  
+        run: |  
+          git merge --no-commit --no-ff upstream/tags/${{ github.event.inputs.upstream_tag }} || true  
+  
+      - name: Resolve conflicts (keep ours)  
+        run: |  
+          # List unmerged files and accept local version  
+          git diff --name-only --diff-filter=U | xargs -I {} git checkout --ours {}  
+          git add -A  
+  
+      - name: Commit merge result  
+        run: |  
+          git commit -m "Merge upstream/${{ github.event.inputs.upstream_tag }} with local changes preserved" || echo "No commit needed (possibly clean merge)"  
+          # Handle case where merge was clean and commit already made  
+          if [ -z "$(git status --porcelain)" ]; then  
+            echo "Merge completed without conflicts"  
+          fi  
+  
+      - name: Push to new branch  
+        run: git push origin ${{ github.event.inputs.new_branch }}  
