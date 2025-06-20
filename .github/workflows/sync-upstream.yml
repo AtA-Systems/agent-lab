@@ -34,7 +34,12 @@ jobs:
         run: |  
           git remote add upstream https://github.com/The-AI-Alliance/agent-lab-ui.git  
           git fetch upstream --tags --force  # Force fetch to ensure tags are updated  
-  
+
+      - name: List available upstream tags  
+        run: |  
+          echo "Available tags in upstream:"  
+          git ls-remote --tags upstream | awk -F/ '{print $3}' | sort -V  
+          
       - name: Verify tag exists  
         run: |  
           git ls-remote --tags upstream | grep -q "refs/tags/${{ github.event.inputs.upstream_tag }}$" || \  
