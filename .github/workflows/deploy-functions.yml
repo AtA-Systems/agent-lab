@@ -17,6 +17,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  
           DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}  
           GITH_TOKEN: ${{ secrets.GITH_TOKEN }}
+          SIMPLER_GRANTS_API_KEY: ${{secrets.SIMPLER_GRANTS_API_KEY}}
           SECRETS: "OPENAI_API_KEY,DEEPINFRA_API_KEY,GITH_TOKEN,SIMPLER_GRANTS_API_KEY" # Comma separated list of your secrets  
         working-directory: ./functions
         run: |  
