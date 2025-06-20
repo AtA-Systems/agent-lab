@@ -143,6 +143,7 @@ async def _query_async_logic_internal(resource_name, message_text, adk_user_id, 
     if not current_adk_session_id:
         try:
             new_session = await session_service.create_session(app_name=resource_name, user_id=adk_user_id)
+            logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
             current_adk_session_id = new_session.id
             logger.info(f"Query Prep: Created new ADK session: {current_adk_session_id}")
         except Exception as e_create_sess:
