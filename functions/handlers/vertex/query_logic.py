@@ -135,6 +135,7 @@ async def _query_async_logic_internal(resource_name, message_text, adk_user_id, 
     if session_id_from_client:
         try:
             retrieved_session = await session_service.get_session(app_name=resource_name, user_id=adk_user_id, session_id=session_id_from_client)
+            logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
             if retrieved_session: current_adk_session_id = retrieved_session.id
             else: logger.warn(f"Query Prep: get_session for '{session_id_from_client}' returned None.")
         except Exception as e:
