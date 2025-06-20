@@ -1,0 +1,56 @@
+name: Create Release  
+  
+on:  
+  workflow_dispatch:  
+    inputs:  
+      version:  
+        description: 'New version number (e.g., 1.2.3)'  
+        required: true  
+        type: string  
+  
+permissions:  
+  contents: write  
+  
+jobs:  
+  cut-release:  
+    runs-on: ubuntu-latest  
+    steps:  
+      - name: Checkout code  
+        uses: actions/checkout@v4  
+        with:  
+          token: ${{ secrets.GITHUB_TOKEN }}  
+  
+      - name: Setup Python  
+        uses: actions/setup-python@v5  
+        with:  
+          python-version: '3.x'  
+  
+      - name: Update version.json via script  
+        run: |  
+          python .github/scripts/update_version.py "${{ github.event.inputs.version }}"  
+  
+      - name: Configure Git  
+        run: |  
+          git config --global user.name "github-actions[bot]"    
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"  
+  
+      - name: Commit and Push version.json  
+        run: |  
+          git add public/version.json  
+          if git diff --staged --quiet; then  
+            echo "No changes to commit in version.json."  
+          else  
+            git commit -m "chore: Release version ${{ github.event.inputs.version }}"  
+            git push origin ${{ github.ref_name }}  
+          fi  
+        env:  
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+  
+      - name: Create GitHub Release and Tag  
+        uses: softprops/action-gh-release@v2  
+        with:  
+          tag_name: v${{ github.event.inputs.version }}  
+          name: Release v${{ github.event.inputs.version }}  
+          generate_release_notes: true  
+        env:  
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
