@@ -14,6 +14,7 @@ on:
   
 permissions:  
   contents: write  
+  workflows: write  # Add explicit permission for workflows  
   
 jobs:  
   sync-upstream:  
@@ -23,6 +24,7 @@ jobs:
         uses: actions/checkout@v4  
         with:  
           fetch-depth: 0  
+          token: ${{ secrets.PAT }}  # Use PAT instead of default token  
   
       - name: Configure git  
         run: |  
@@ -40,10 +42,8 @@ jobs:
           echo "Available tags in upstream:"  
           git ls-remote --tags upstream | awk -F/ '{print $3}' | sort -V  
   
-      # FIXED VERIFICATION STEP  
       - name: Verify tag exists  
         run: |  
-          # Check if tag exists without requiring exact case or formatting  
           if git show-ref --tags | grep -qi "${{ github.event.inputs.upstream_tag }}"; then  
             echo "Tag ${{ github.event.inputs.upstream_tag }} found"  
           else  
@@ -56,10 +56,8 @@ jobs:
       - name: Create and switch to new branch  
         run: git checkout -b ${{ github.event.inputs.new_branch }}  
   
-      # FIXED MERGE REFERENCE  
       - name: Merge upstream changes  
         run: |  
-          # Use the tag directly without "upstream/" prefix  
           git merge --no-commit --no-ff ${{ github.event.inputs.upstream_tag }} || true  
   
       - name: Resolve conflicts (keep local version)  
