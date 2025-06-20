@@ -131,9 +131,10 @@ async def _query_async_logic_internal(resource_name, message_text, adk_user_id, 
         return {"events": [], "responseText": "", "adkSessionId": None, "queryErrorDetails": [f"Failed to access agent: {str(e_get_app)}"] + log_errors_fallback}
 
     logger.info(f"Query Prep: Retrieved remote app: {remote_app.name}")
-
+    logger.info(f"DEBUG: session_id_from_client: {session_id_from_client}")
     if session_id_from_client:
         try:
+            logger.info(f"DEBUG: session_service: {session_service}")
             retrieved_session = await session_service.get_session(app_name=resource_name, user_id=adk_user_id, session_id=session_id_from_client)
             logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
             if retrieved_session: current_adk_session_id = retrieved_session.id
@@ -142,6 +143,7 @@ async def _query_async_logic_internal(resource_name, message_text, adk_user_id, 
             logger.warn(f"Query Prep: Failed to retrieve session '{session_id_from_client}'. Error: {e}. Will create new.")
     if not current_adk_session_id:
         try:
+            logger.info(f"DEBUG: session_service: {session_service}")
             new_session = await session_service.create_session(app_name=resource_name, user_id=adk_user_id)
             logger.info(f"DEBUG: retrieved_session: {retrieved_session}")
             current_adk_session_id = new_session.id
