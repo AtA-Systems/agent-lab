@@ -160,11 +160,13 @@ const AgentRunner = ({
             setCurrentSessionId(null); // No live session for historical view
         } else if (!isHistoricalView) {
             // If switching from historical to live and not reloading, reset conversation
+            // This check now uses the 'conversation' state from the previous render, which is correct here.
             if (conversation.some(c => c.type === 'stuffed_context_history')) {
                 setConversation([]); // Clear if it contains historical context markers
             }
         }
-    }, [historicalRunData, isHistoricalView, conversation]);
+        //eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [historicalRunData, isHistoricalView]); 
 
 
     const handleOpenReasoningLog = (events) => {
